@@ -2062,7 +2062,7 @@ function drawLabels() {
   }
   for (const q of zoneLabels) if (q.max) zoneLabel(q); // the machines' own labels go over the signs of the row above
   { const day = pushesToday(), p = pushes[0], px = sx(L.pad.x), py = sy(L.pad.y) + 6;
-    pill(day ? "Pushes \u00b7 " + day + " today" : "Pushes", px, py, "#ffe0c4", "rgba(60,28,6,.88)", "600 10px system-ui, sans-serif");
+    pill(day ? "Pushes \u00b7 " + day + (R.on ? " so far" : " today") : "Pushes", px, py, "#ffe0c4", "rgba(60,28,6,.88)", "600 10px system-ui, sans-serif");
     if (p && now() - p.ts < 1800000) pill(short(p.by || p.person) + " \u2192 " + (p.branch.length > 18 ? p.branch.slice(0, 17) + "\u2026" : p.branch) + " \u00b7 " + ageShort((now() - p.ts) / 1000), px, py + 19, "#ffd9b8", "rgba(40,20,6,.8)", "600 10px system-ui, sans-serif"); }
   if (heldLabel) pill("Held mail " + heldLabel.total, sx(heldLabel.x), sy(heldLabel.y) + 4, "#ffd0d5", "rgba(60,14,22,.85)", "600 10px system-ui, sans-serif");
   if (z > 0.95) claims.forEach((c, i) => { const p = cratePos(i); g.font = "10px ui-monospace, Consolas, monospace"; g.fillStyle = "rgba(214,222,255,.75)"; g.textAlign = "center"; g.textBaseline = "top"; const name = c.path.split("/").pop(); g.fillText(name.length > 13 ? name.slice(0, 12) + "…" : name, sx(p.x), sy(p.y) + 4); });
@@ -2142,7 +2142,7 @@ function frame(nowMs) {
   hits.push({ x: L.steam.x, y: L.steam.y - 30, r: 44, get tip() { return "Steam engine, " + steam.psi + " PSI\nDecoration, built by Swidlord's session: it runs faster and steams more as the space gets busier. Sessions at work keep it ticking over; each message, claim and push stokes it, and the heat halves every 45 seconds." + (paused ? "\nThe relay is paused, so it is running down." : ""); } });
   { const day = pushesToday(), p = pushes[0];
     hits.push({ x: L.pad.x, y: L.pad.y - 28, r: 52, pad: true, get tip() { return "Launch pad (click for the push log)\nA rocket goes up each time someone pushes commits to the project's repository. Git reports it; it is not a message, and nobody is told or woken.\n" +
-      (p ? "Last: " + (p.by || p.person) + " pushed " + pushWhat(p) + ", " + agoText((now() - p.ts) / 1000) + ".\n" + day + (day === 1 ? " push" : " pushes") + " in the last 24 hours." : "No pushes reported yet."); } }); }
+      (p ? "Last: " + (p.by || p.person) + " pushed " + pushWhat(p) + ", " + agoText((now() - p.ts) / 1000) + ".\n" + day + (day === 1 ? " push" : " pushes") + (R.on ? " so far in this replay." : " in the last 24 hours.") : "No pushes reported yet."); } }); }
   { const by = (st) => board.tickets.filter((k) => k.state === st).length;
     const tip = () => { const n = openTickets().length; return "Ticket board (click to open)\n" + (board.pm ? "Overseen by " + board.pm : "Nobody oversees it yet") + "\n" + (board.tickets.length ? n + " open: " + TCOLS.slice(0, 4).map(([st, name]) => by(st) + " " + name.toLowerCase()).join(", ") + ". " + by("done") + " done this week." : "No tickets yet. Agents add them with the relay's open_ticket tool.") + "\nNote colour: domain. Dot: owner."; };
     for (const dx of [-76, 0, 76]) hits.push({ x: L.board.x + dx, y: L.board.y - 64, r: 50, board: true, get tip() { return tip(); } }); }
@@ -2895,7 +2895,7 @@ function simState() {
       availability: a.avail === "open" && [...S.orders.values()].some((o) => o.to === a.id && o.state === "accepted") ? "busy" : a.avail || "closed" })),
     // an offer nobody answered lapses after 30 minutes, as on the relay
     orders: [...S.orders.values()].map((o) => ({ id: o.id, from: o.from, to: o.to, task: o.task, given: agoText((R.t - o.ts) / 1000), state: o.state === "offered" && R.t - o.ts > 1800000 ? "expired" : o.state })),
-    pushes: S.pushes.slice(-40).reverse(), pushes_day: S.pushes.filter((p) => R.t - p.ts < 86400000).length, // the state holds only the newest; the day's count is given whole, as on the relay
+    pushes: S.pushes.slice(-40).reverse(), pushes_day: S.pushes.length, // the state holds only the newest. A replay counts every push so far, so the number only climbs
     board: { pm: S.pm, dropped: [...S.tickets.values()].filter((k) => k.state === "dropped").length,
       tickets: [...S.tickets.values()].filter((k) => k.state !== "dropped" && !(k.state === "done" && R.t - k.closed > 7 * 86400000)).sort((a, b) => b.id - a.id)
         .map((k) => ({ id: k.id, title: k.title || "", state: k.state, domain: k.domain || "", owner: k.owner || "", by: k.by || "", priority: k.priority || "normal", opened_s: Math.max(0, (R.t - (k.opened || k.at)) / 1000), updated_s: Math.max(0, (R.t - k.at) / 1000), notes: Math.max(0, (k.notes || 1) - 1), last: null, body: "" })) },
