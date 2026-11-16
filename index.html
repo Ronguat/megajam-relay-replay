@@ -2810,7 +2810,7 @@ function simState() {
       availability: a.avail === "open" && [...S.orders.values()].some((o) => o.to === a.id && o.state === "accepted") ? "busy" : a.avail || "closed" })),
     // an offer nobody answered lapses after 30 minutes, as on the relay
     orders: [...S.orders.values()].map((o) => ({ id: o.id, from: o.from, to: o.to, task: o.task, given: agoText((R.t - o.ts) / 1000), state: o.state === "offered" && R.t - o.ts > 1800000 ? "expired" : o.state })),
-    pushes: S.pushes.slice(-40).reverse(),
+    pushes: S.pushes.slice(-40).reverse(), pushes_day: S.pushes.filter((p) => R.t - p.ts < 86400000).length, // the state holds only the newest; the day's count is given whole, as on the relay
     board: { pm: S.pm, dropped: [...S.tickets.values()].filter((k) => k.state === "dropped").length,
       tickets: [...S.tickets.values()].filter((k) => k.state !== "dropped" && !(k.state === "done" && R.t - k.closed > 7 * 86400000)).sort((a, b) => b.id - a.id)
         .map((k) => ({ id: k.id, title: k.title || "", state: k.state, domain: k.domain || "", owner: k.owner || "", by: k.by || "", priority: k.priority || "normal", opened_s: Math.max(0, (R.t - (k.opened || k.at)) / 1000), updated_s: Math.max(0, (R.t - k.at) / 1000), notes: Math.max(0, (k.notes || 1) - 1), last: null, body: "" })) },
